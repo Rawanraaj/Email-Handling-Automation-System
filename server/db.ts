@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and, desc, gte, lte, like, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, emails, emailSummaries, emailReplies, automationRules, analyticsSnapshots, Email, EmailSummary, EmailReply, AutomationRule, AnalyticsSnapshot } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,244 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Email management queries
+export async function upsertEmail(email: typeof emails.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(emails).values(email).onDuplicateKeyUpdate({
+    set: {
+      subject: email.subject,
+      snippet: email.snippet,
+      body: email.body,
+      isRead: email.isRead,
+      isStarred: email.isStarred,
+      category: email.category,
+      aiScore: email.aiScore,
+      updatedAt: new Date(),
+    },
+  });
+}
+
+export async function getEmailsByUserId(userId: number, limit = 50, offset = 0) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(emails)
+    .where(eq(emails.userId, userId))
+    .orderBy(desc(emails.receivedAt))
+    .limit(limit)
+    .offset(offset);
+}
+
+export async function getEmailById(emailId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select()
+    .from(emails)
+    .where(and(eq(emails.id, emailId), eq(emails.userId, userId)))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updateEmailCategory(emailId: number, category: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(emails).set({ category: category as any }).where(eq(emails.id, emailId));
+}
+
+export async function updateEmailReadStatus(emailId: number, isRead: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(emails).set({ isRead: isRead ? 1 : 0 }).where(eq(emails.id, emailId));
+}
+
+export async function updateEmailStarred(emailId: number, isStarred: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(emails).set({ isStarred: isStarred ? 1 : 0 }).where(eq(emails.id, emailId));
+}
+
+export async function getEmailsByCategory(userId: number, category: string, limit = 50) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(emails)
+    .where(and(eq(emails.userId, userId), eq(emails.category, category as any)))
+    .orderBy(desc(emails.receivedAt))
+    .limit(limit);
+}
+
+export async function getPriorityEmails(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(emails)
+    .where(eq(emails.userId, userId))
+    .orderBy(desc(emails.aiScore), desc(emails.receivedAt))
+    .limit(limit);
+}
+
+export async function searchEmails(userId: number, query: string, limit = 50) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(emails)
+    .where(
+      and(
+        eq(emails.userId, userId),
+        like(emails.subject, `%${query}%`)
+      )
+    )
+    .orderBy(desc(emails.receivedAt))
+    .limit(limit);
+}
+
+// Email summary queries
+export async function saveSummary(emailId: number, summary: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(emailSummaries).values({ emailId, summary });
+  await db.update(emails).set({ hasSummary: 1 }).where(eq(emails.id, emailId));
+}
+
+export async function getSummary(emailId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select()
+    .from(emailSummaries)
+    .where(eq(emailSummaries.emailId, emailId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+// Email reply suggestions queries
+export async function saveReplySuggestions(emailId: number, replies: string[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  for (let i = 0; i < replies.length; i++) {
+    await db.insert(emailReplies).values({
+      emailId,
+      replyText: replies[i],
+      replyIndex: i,
+    });
+  }
+  await db.update(emails).set({ hasReplySuggestions: 1 }).where(eq(emails.id, emailId));
+}
+
+export async function getReplySuggestions(emailId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(emailReplies)
+    .where(eq(emailReplies.emailId, emailId))
+    .orderBy(emailReplies.replyIndex);
+}
+
+// Automation rules queries
+export async function createRule(userId: number, name: string, condition: any, action: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(automationRules).values({
+    userId,
+    name,
+    condition: JSON.stringify(condition),
+    action: JSON.stringify(action),
+  });
+}
+
+export async function getRulesByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(automationRules)
+    .where(and(eq(automationRules.userId, userId), eq(automationRules.isActive, 1)));
+}
+
+export async function updateRule(ruleId: number, updates: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(automationRules).set(updates).where(eq(automationRules.id, ruleId));
+}
+
+export async function deleteRule(ruleId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(automationRules).set({ isActive: 0 }).where(eq(automationRules.id, ruleId));
+}
+
+// Analytics queries
+export async function saveAnalyticsSnapshot(userId: number, date: string, data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(analyticsSnapshots).values({
+    userId,
+    date,
+    ...data,
+  });
+}
+
+export async function getAnalyticsForDateRange(userId: number, startDate: string, endDate: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(analyticsSnapshots)
+    .where(
+      and(
+        eq(analyticsSnapshots.userId, userId),
+        gte(analyticsSnapshots.date, startDate),
+        lte(analyticsSnapshots.date, endDate)
+      )
+    )
+    .orderBy(analyticsSnapshots.date);
+}
+
+export async function getTopSenders(userId: number, limit = 10) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // This is a simplified version - in production you'd use raw SQL for aggregation
+  const allEmails = await db
+    .select()
+    .from(emails)
+    .where(eq(emails.userId, userId));
+
+  const senderMap = new Map<string, { name: string; count: number }>();
+  allEmails.forEach((email) => {
+    const current = senderMap.get(email.from) || { name: email.senderName || email.from, count: 0 };
+    senderMap.set(email.from, { ...current, count: current.count + 1 });
+  });
+
+  return Array.from(senderMap.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}

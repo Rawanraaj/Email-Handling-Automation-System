@@ -5,8 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Mail, Search, Star, Archive, Trash2, Reply, Copy } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import Compose from "./Compose";
 
 type Category = "Work" | "Personal" | "Promotions" | "Urgent" | "Other";
 
@@ -23,8 +24,18 @@ export default function Inbox() {
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEmailId, setSelectedEmailId] = useState<number | null>(null);
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
 
-  const { data: emails, isLoading } = trpc.emails.getInbox.useQuery({ limit: 50 });
+  const syncMutation = trpc.sync.syncGmail.useMutation();
+  const { data: emails, isLoading, refetch } = trpc.emails.getInbox.useQuery({ limit: 50 });
+
+  // Sync emails on component mount
+  useEffect(() => {
+    syncMutation.mutate({ maxResults: 50 }, {
+      onSuccess: () => refetch(),
+    });
+  }, []);
+
   const { data: selectedEmail } = selectedEmailId
     ? trpc.emails.getById.useQuery({ emailId: selectedEmailId })
     : { data: null };
@@ -70,7 +81,7 @@ export default function Inbox() {
             <h1 className="text-3xl font-bold">Inbox</h1>
             <p className="text-muted-foreground mt-1">Manage your emails with AI-powered intelligence</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setIsComposeOpen(true)}>
             <Mail className="w-4 h-4" />
             Compose
           </Button>
@@ -259,6 +270,10 @@ export default function Inbox() {
           </div>
         </div>
       </div>
+
+      {/* Compose Modal */}
+      <Compose open={isComposeOpen} onOpenChange={setIsComposeOpen} />
     </DashboardLayout>
   );
 }
+

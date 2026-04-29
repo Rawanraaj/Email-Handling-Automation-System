@@ -5,6 +5,8 @@ import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { invokeLLM } from "./_core/llm";
 import * as db from "./db";
+import * as emailSync from "./emailSync";
+import * as gmail from "./gmail";
 import { TRPCError } from "@trpc/server";
 
 export const appRouter = router({
@@ -262,6 +264,57 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         await db.deleteRule(input.ruleId);
         return { success: true };
+      }),
+  }),
+
+  // Email sync and compose
+  sync: router({
+    // Sync emails from Gmail
+    syncGmail: protectedProcedure
+      .input(z.object({ maxResults: z.number().default(50) }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const result = await emailSync.syncGmailEmails(ctx.user.id, input.maxResults);
+          return result;
+        } catch (error) {
+          console.error("Gmail sync error:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to sync emails from Gmail",
+          });
+        }
+      }),
+
+    // Compose and send email
+    sendEmail: protectedProcedure
+      .input(z.object({
+        to: z.array(z.string().email()),
+        cc: z.array(z.string().email()).optional(),
+        bcc: z.array(z.string().email()).optional(),
+        subject: z.string(),
+        content: z.string(),
+        threadId: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const result = await gmail.sendGmailMessage(
+            input.to,
+            input.subject,
+            input.content,
+            {
+              cc: input.cc,
+              bcc: input.bcc,
+              threadId: input.threadId,
+            }
+          );
+          return result;
+        } catch (error) {
+          console.error("Email send error:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to send email",
+          });
+        }
       }),
   }),
 

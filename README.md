@@ -1,4 +1,4 @@
-# Email Automation Pro
+# Azlor
 
 A professional, AI-powered email management system with intelligent categorization, smart replies, automation rules, and comprehensive analytics.
 
@@ -50,8 +50,8 @@ A professional, AI-powered email management system with intelligent categorizati
 
 ```bash
 # Clone repository
-git clone https://github.com/Rawanraaj/email-automation-pro.git
-cd email-automation-pro
+git clone https://github.com/Rawanraaj/azlor.git
+cd azlor
 
 # Install dependencies
 pnpm install
@@ -99,7 +99,7 @@ OWNER_NAME=Your Name
 ## 📦 Project Structure
 
 ```
-email-automation-pro/
+azlor/
 ├── client/                    # React frontend
 │   ├── src/
 │   │   ├── pages/            # Page components
@@ -153,7 +153,7 @@ email-automation-pro/
 
 ## 🔐 Security
 
-Email Automation Pro implements enterprise-grade security:
+Azlor implements enterprise-grade security:
 
 - ✅ HTTPS/TLS encryption
 - ✅ OAuth 2.0 authentication
@@ -283,8 +283,8 @@ Built with:
 
 ---
 
-**Made with ❤️ by Email Automation Pro Team**
+**Made with ❤️ by Azlor Team**
 
 **Website:** https://emailautomationpro.com  
-**GitHub:** https://github.com/Rawanraaj/email-automation-pro  
+**GitHub:** https://github.com/Rawanraaj/azlor  
 **Status:** Production Ready ✅

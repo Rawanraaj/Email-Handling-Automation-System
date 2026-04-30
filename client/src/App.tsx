@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import Inbox from "./pages/Inbox";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import Pricing from "./pages/Pricing";
 
 function Router() {
   return (
@@ -16,6 +17,7 @@ function Router() {
       <Route path={"/inbox"} component={Inbox} />
       <Route path={"/analytics"} component={Analytics} />
       <Route path={"/settings"} component={Settings} />
+      <Route path={"/pricing"} component={Pricing} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
@@ -39,3 +41,7 @@ function App() {
 }
 
 export default App;
+
+// Azlor - Professional Email Automation Platform
+// © 2026 Azlor. All rights reserved.
+// Colors: Navy Blue (#0F3A7D), Gold (#C9A961)

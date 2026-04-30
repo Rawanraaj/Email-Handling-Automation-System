@@ -1,8 +1,8 @@
-# Email Automation Pro - Security Guide
+# Azlor - Security Guide
 
 ## Enterprise-Grade Security Implementation
 
-This document outlines all security measures implemented in Email Automation Pro to protect user data and prevent breaches.
+This document outlines all security measures implemented in Azlor to protect user data and prevent breaches.
 
 ## 1. Authentication & Authorization
 

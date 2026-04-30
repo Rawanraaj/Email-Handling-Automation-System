@@ -1,8 +1,8 @@
-# Email Automation Pro - Deployment Guide
+# Azlor - Deployment Guide
 
 ## Overview
 
-This guide covers deploying Email Automation Pro to **Render.com** with a free PostgreSQL database. The application is production-ready with enterprise-grade security.
+This guide covers deploying Azlor to **Render.com** with a free PostgreSQL database. The application is production-ready with enterprise-grade security.
 
 ## Prerequisites
 
@@ -17,7 +17,7 @@ This guide covers deploying Email Automation Pro to **Render.com** with a free P
 2. Sign in or create account
 3. Click **New +** → **PostgreSQL**
 4. Configure:
-   - **Name:** `email-automation-pro-db`
+   - **Name:** `azlor-db`
    - **Database:** `email_automation`
    - **User:** `postgres`
    - **Region:** Choose closest to you
@@ -32,7 +32,7 @@ This guide covers deploying Email Automation Pro to **Render.com** with a free P
 2. Click **New +** → **Web Service**
 3. Connect your GitHub repository
 4. Configure:
-   - **Name:** `email-automation-pro-api`
+   - **Name:** `azlor-api`
    - **Environment:** `Node`
    - **Build Command:** `pnpm install && pnpm build`
    - **Start Command:** `pnpm start`
@@ -60,25 +60,25 @@ This guide covers deploying Email Automation Pro to **Render.com** with a free P
 
 6. Click **Create Web Service**
 7. Wait for deployment (5-10 minutes)
-8. Copy the service URL (e.g., `https://email-automation-pro-api.onrender.com`)
+8. Copy the service URL (e.g., `https://azlor-api.onrender.com`)
 
 ## Step 3: Update Frontend Configuration
 
 1. In your GitHub repository, update `client/src/const.ts`:
    ```typescript
-   export const API_URL = "https://email-automation-pro-api.onrender.com";
+   export const API_URL = "https://azlor-api.onrender.com";
    ```
 
 2. Update environment variables in Render for frontend:
    ```
-   VITE_API_URL=https://email-automation-pro-api.onrender.com
+   VITE_API_URL=https://azlor-api.onrender.com
    ```
 
 ## Step 4: Deploy Frontend to Render
 
 1. Create another Web Service for frontend
 2. Configure:
-   - **Name:** `email-automation-pro`
+   - **Name:** `azlor`
    - **Environment:** `Node`
    - **Build Command:** `cd client && pnpm install && pnpm build`
    - **Start Command:** `cd server && pnpm start`
@@ -189,6 +189,6 @@ When ready to scale:
 
 ---
 
-**Deployed by:** Email Automation Pro Team  
+**Deployed by:** Azlor Team  
 **Last Updated:** 2026-04-29  
 **Version:** 1.0.0

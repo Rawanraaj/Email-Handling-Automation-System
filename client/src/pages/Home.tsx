@@ -28,8 +28,7 @@ export default function Home() {
       <nav className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50">
         <div className="container flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <Mail className="w-6 h-6 text-blue-600" />
-            <span className="text-xl font-bold">Email Automation Pro</span>
+            <span className="text-xl font-bold text-blue-900">Azlor</span>
           </div>
           <Button asChild>
             <a href={getLoginUrl()}>Sign In</a>
@@ -42,8 +41,8 @@ export default function Home() {
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <div className="space-y-4">
             <h1 className="text-5xl md:text-6xl font-bold leading-tight">
-              Master Your Email with
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> AI Intelligence</span>
+              Professional Email Automation by
+              <span className="bg-gradient-to-r from-blue-700 to-amber-500 bg-clip-text text-transparent"> Azlor</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Intelligent email management that learns your patterns, categorizes automatically, and responds smartly. Experience the future of email productivity.
@@ -141,10 +140,10 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="container py-20">
-        <Card className="p-12 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center space-y-6">
+        <Card className="p-12 bg-gradient-to-r from-blue-900 to-blue-700 text-white text-center space-y-6">
           <h2 className="text-3xl font-bold">Ready to Transform Your Email?</h2>
           <p className="text-lg opacity-90 max-w-2xl mx-auto">
-            Join thousands of professionals who have reclaimed their inbox with Email Automation Pro.
+            Join thousands of professionals who have reclaimed their inbox with Azlor.
           </p>
           <Button size="lg" variant="secondary" asChild>
             <a href={getLoginUrl()}>Start Your Free Trial</a>
@@ -155,7 +154,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-border/40 py-8 mt-20">
         <div className="container text-center text-muted-foreground">
-          <p>&copy; 2026 Email Automation Pro. All rights reserved.</p>
+          <p>&copy; 2026 Azlor. All rights reserved.</p>
         </div>
       </footer>
     </div>

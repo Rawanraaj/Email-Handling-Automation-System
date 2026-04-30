@@ -1,8 +1,8 @@
-# Email Automation Pro - API Documentation
+# Azlor - API Documentation
 
 ## Overview
 
-Email Automation Pro uses tRPC for type-safe API communication. All endpoints are accessed through `/api/trpc/` and require authentication via OAuth 2.0.
+Azlor uses tRPC for type-safe API communication. All endpoints are accessed through `/api/trpc/` and require authentication via OAuth 2.0.
 
 ## Authentication
 

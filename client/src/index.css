@@ -43,15 +43,16 @@
 }
 
 :root {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-600);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
+  /* Azlor Color Scheme */
+  --primary: oklch(0.35 0.15 250); /* Navy Blue #0F3A7D */
+  --primary-foreground: oklch(0.98 0 0); /* White */
+  --sidebar-primary: oklch(0.40 0.14 250); /* Light Navy #1E5BA8 */
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --chart-1: oklch(0.50 0.12 250); /* Azlor Navy */
+  --chart-2: oklch(0.60 0.10 45); /* Gold #C9A961 */
+  --chart-3: oklch(0.45 0.13 250);
+  --chart-4: oklch(0.35 0.15 250);
+  --chart-5: oklch(0.25 0.16 250);
   --radius: 0.65rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.235 0.015 65);
@@ -63,8 +64,8 @@
   --secondary-foreground: oklch(0.4 0.015 65);
   --muted: oklch(0.967 0.001 286.375);
   --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.141 0.005 285.823);
+  --accent: oklch(0.60 0.10 45); /* Gold #C9A961 */
+  --accent-foreground: oklch(0.15 0.02 250); /* Dark Navy */
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.92 0.004 286.32);

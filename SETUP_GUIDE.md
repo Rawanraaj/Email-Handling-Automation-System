@@ -1,4 +1,4 @@
-# Email Automation Pro - Complete Setup & Deployment Guide
+# Azlor - Complete Setup & Deployment Guide
 
 ## 📋 Table of Contents
 
@@ -32,8 +32,8 @@ Before starting, ensure you have:
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/Rawanraaj/email-automation-pro.git
-cd email-automation-pro
+git clone https://github.com/Rawanraaj/azlor.git
+cd azlor
 ```
 
 ### Step 2: Install Dependencies
@@ -117,11 +117,11 @@ The application will be available at `http://localhost:3000`
 
 ```bash
 # Option 1: Using GitHub CLI
-gh repo create email-automation-pro --private --source=. --remote=origin --push
+gh repo create azlor --private --source=. --remote=origin --push
 
 # Option 2: Manual setup
 # 1. Go to github.com/new
-# 2. Create repository "email-automation-pro"
+# 2. Create repository "azlor"
 # 3. Make it PRIVATE
 # 4. Don't initialize with README
 ```
@@ -141,7 +141,7 @@ STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxx
 
 ```bash
 git add .
-git commit -m "Initial commit: Email Automation Pro"
+git commit -m "Initial commit: Azlor"
 git branch -M main
 git push -u origin main
 ```
@@ -166,7 +166,7 @@ git push -u origin main
 
 1. Click **New +** → **PostgreSQL**
 2. Configure:
-   - **Name:** `email-automation-pro-db`
+   - **Name:** `azlor-db`
    - **Database:** `email_automation`
    - **User:** `postgres`
    - **Region:** Choose closest to your users
@@ -180,7 +180,7 @@ git push -u origin main
 1. Click **New +** → **Web Service**
 2. Connect your GitHub repository
 3. Configure:
-   - **Name:** `email-automation-pro-api`
+   - **Name:** `azlor-api`
    - **Environment:** `Node`
    - **Build Command:** `pnpm install && pnpm build`
    - **Start Command:** `pnpm start`

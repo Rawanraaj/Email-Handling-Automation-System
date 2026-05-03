@@ -34,13 +34,11 @@ export default function Settings() {
     try {
       await createMutation.mutateAsync({
         name: formData.name,
-        condition: {
-          type: formData.conditionType,
-          value: formData.conditionValue,
+        conditions: {
+          [formData.conditionType]: formData.conditionValue,
         },
-        action: {
-          type: formData.actionType,
-          value: formData.actionValue,
+        actions: {
+          [formData.actionType]: formData.actionValue,
         },
       });
       setFormData({
@@ -59,7 +57,7 @@ export default function Settings() {
 
   const handleDeleteRule = async (ruleId: number) => {
     try {
-      await deleteMutation.mutateAsync({ ruleId });
+      await deleteMutation.mutateAsync({ id: ruleId });
       refetch();
     } catch (error) {
       console.error("Failed to delete rule:", error);

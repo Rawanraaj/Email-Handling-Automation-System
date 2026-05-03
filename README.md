@@ -143,7 +143,7 @@ azlor/
 - PostgreSQL (database)
 - Stripe (payments)
 - Gmail API (email)
-- Manus OAuth (authentication)
+- OAuth 2.0 (authentication)
 
 ## 📚 Documentation
 

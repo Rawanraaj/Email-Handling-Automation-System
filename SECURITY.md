@@ -7,7 +7,7 @@ This document outlines all security measures implemented in Azlor to protect use
 ## 1. Authentication & Authorization
 
 ### OAuth 2.0
-- ✅ Manus OAuth integration for secure login
+- ✅ OAuth 2.0 integration for secure login
 - ✅ No password storage (delegated to OAuth provider)
 - ✅ Automatic token refresh
 - ✅ Session expiration (24 hours)

@@ -30,9 +30,14 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <span className="text-xl font-bold text-blue-900">Azlor</span>
           </div>
-          <Button asChild>
-            <a href={getLoginUrl()}>Sign In</a>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild>
+              <a href="/login">Sign In</a>
+            </Button>
+            <Button asChild variant="outline">
+              <a href="/login?signup=true">Sign Up</a>
+            </Button>
+          </div>
         </div>
       </nav>
 
@@ -51,7 +56,7 @@ export default function Home() {
 
           <div className="flex gap-4 justify-center pt-4">
             <Button size="lg" asChild>
-              <a href={getLoginUrl()}>Get Started Free</a>
+              <a href="/login?signup=true">Get Started Free</a>
             </Button>
             <Button size="lg" variant="outline">
               Learn More
@@ -146,7 +151,7 @@ export default function Home() {
             Join thousands of professionals who have reclaimed their inbox with Azlor.
           </p>
           <Button size="lg" variant="secondary" asChild>
-            <a href={getLoginUrl()}>Start Your Free Trial</a>
+            <a href="/login?signup=true">Start Your Free Trial</a>
           </Button>
         </Card>
       </section>

@@ -20,7 +20,7 @@
 - **Server:** Express 4 with Node.js
 - **API:** tRPC 11 (type-safe RPC framework)
 - **Database ORM:** Drizzle ORM (MySQL/PostgreSQL)
-- **Authentication:** Manus OAuth 2.0
+- **Authentication:** OAuth 2.0 2.0
 - **Payments:** Stripe integration
 - **AI:** LLM integration for email processing
 
@@ -84,7 +84,7 @@
 - **Stripe Integration:** Full payment processing
 
 ### 7. Security & Compliance
-- **OAuth 2.0:** Secure authentication via Manus
+- **OAuth 2.0:** Secure authentication 
 - **Encryption:** HTTPS/TLS, encrypted at rest
 - **Rate Limiting:** 100 requests/min (free), 1000/min (pro)
 - **CSRF Protection:** SameSite cookies, CSRF tokens
@@ -212,7 +212,7 @@ azlor/
 ## 🔐 Security Features
 
 ### Authentication
-- OAuth 2.0 via Manus (no passwords stored)
+- OAuth 2.0  (no passwords stored)
 - Secure session cookies (HttpOnly, Secure, SameSite)
 - 24-hour session expiration
 - Automatic token refresh

@@ -26,38 +26,34 @@ export default function Inbox() {
   const [selectedEmailId, setSelectedEmailId] = useState<number | null>(null);
   const [isComposeOpen, setIsComposeOpen] = useState(false);
 
-  const syncMutation = trpc.sync.syncGmail.useMutation();
-  const { data: emails, isLoading, refetch } = trpc.emails.getInbox.useQuery({ limit: 50 });
+  const { data: emails, isLoading, refetch } = trpc.emails.getAll.useQuery({ limit: 50 });
 
   // Sync emails on component mount
   useEffect(() => {
-    syncMutation.mutate({ maxResults: 50 }, {
-      onSuccess: () => refetch(),
-    });
+    refetch();
   }, []);
 
   const { data: selectedEmail } = selectedEmailId
-    ? trpc.emails.getById.useQuery({ emailId: selectedEmailId })
+    ? trpc.emails.getById.useQuery({ id: selectedEmailId })
     : { data: null };
 
-  const updateReadMutation = trpc.emails.updateReadStatus.useMutation();
-  const updateStarredMutation = trpc.emails.updateStarred.useMutation();
+  const updateMutation = trpc.emails.update.useMutation();
   const categorizeMutation = trpc.ai.categorizeEmail.useMutation();
   const summarizeMutation = trpc.ai.summarizeEmail.useMutation();
   const repliesMutation = trpc.ai.generateReplies.useMutation();
 
-  const filteredEmails = emails?.filter((email) => {
+  const filteredEmails = emails?.filter((email: any) => {
     if (selectedCategory !== "all" && email.category !== selectedCategory) return false;
     if (searchQuery && !email.subject?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
 
   const handleMarkRead = (emailId: number, isRead: boolean) => {
-    updateReadMutation.mutate({ emailId, isRead: !isRead });
+    updateMutation.mutate({ id: emailId, isRead: !isRead });
   };
 
   const handleStar = (emailId: number, isStarred: boolean) => {
-    updateStarredMutation.mutate({ emailId, isStarred: !isStarred });
+    updateMutation.mutate({ id: emailId, isStarred: !isStarred });
   };
 
   const handleCategorize = (emailId: number) => {
@@ -122,7 +118,7 @@ export default function Inbox() {
                 </div>
               ) : filteredEmails && filteredEmails.length > 0 ? (
                 <div className="divide-y divide-border">
-                  {filteredEmails.map((email) => (
+                  {filteredEmails.map((email: any) => (
                     <div
                       key={email.id}
                       className={`email-list-item ${email.isRead ? "" : "unread"}`}

@@ -9,7 +9,7 @@ This guide covers deploying Azlor to **Render.com** with a free PostgreSQL datab
 - GitHub account with the repository pushed
 - Render.com account (free)
 - Stripe account (for payments)
-- Gmail API credentials (already configured via Manus OAuth)
+- Gmail API credentials (already configured via OAuth 2.0)
 
 ## Step 1: Create Render PostgreSQL Database
 
@@ -44,15 +44,15 @@ This guide covers deploying Azlor to **Render.com** with a free PostgreSQL datab
    NODE_ENV=production
    DATABASE_URL=<paste Internal Database URL from step 1>
    JWT_SECRET=<generate random 32-char string>
-   VITE_APP_ID=<from Manus OAuth>
+   VITE_APP_ID=<from OAuth 2.0>
    OAUTH_SERVER_URL=https://api.manus.im
    VITE_OAUTH_PORTAL_URL=https://auth.manus.im
-   OWNER_OPEN_ID=<your Manus OpenID>
+   OWNER_OPEN_ID=<your OpenID>
    OWNER_NAME=<your name>
    BUILT_IN_FORGE_API_URL=https://api.manus.im
-   BUILT_IN_FORGE_API_KEY=<from Manus>
+   BUILT_IN_FORGE_API_KEY=<>
    VITE_FRONTEND_FORGE_API_URL=https://api.manus.im
-   VITE_FRONTEND_FORGE_API_KEY=<from Manus>
+   VITE_FRONTEND_FORGE_API_KEY=<>
    STRIPE_SECRET_KEY=<from Stripe dashboard>
    STRIPE_PUBLISHABLE_KEY=<from Stripe dashboard>
    OWNER_EMAIL=niroulaaalok54@gmail.com
@@ -118,7 +118,7 @@ This guide covers deploying Azlor to **Render.com** with a free PostgreSQL datab
 ## Step 8: Verify Deployment
 
 1. Visit your app URL
-2. Test login with Manus OAuth
+2. Test login with OAuth 2.0
 3. Test email sync
 4. Verify analytics dashboard loads
 5. Test compose and send

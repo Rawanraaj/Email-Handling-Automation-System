@@ -82,16 +82,16 @@ git remote -v
 NODE_ENV=production
 DATABASE_URL=<paste from database>
 JWT_SECRET=<generate 32-char random string>
-VITE_APP_ID=<from Manus>
+VITE_APP_ID=<>
 OAUTH_SERVER_URL=https://api.manus.im
 VITE_OAUTH_PORTAL_URL=https://auth.manus.im
-OWNER_OPEN_ID=<your Manus OpenID>
+OWNER_OPEN_ID=<your OpenID>
 OWNER_NAME=Rawan Raaj
 OWNER_EMAIL=niroulaaalok54@gmail.com
 BUILT_IN_FORGE_API_URL=https://api.manus.im
-BUILT_IN_FORGE_API_KEY=<from Manus>
+BUILT_IN_FORGE_API_KEY=<>
 VITE_FRONTEND_FORGE_API_URL=https://api.manus.im
-VITE_FRONTEND_FORGE_API_KEY=<from Manus>
+VITE_FRONTEND_FORGE_API_KEY=<>
 STRIPE_SECRET_KEY=<from Stripe>
 STRIPE_PUBLISHABLE_KEY=<from Stripe>
 ```

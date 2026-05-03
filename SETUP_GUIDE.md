@@ -76,12 +76,12 @@ docker run --name postgres-email \
 
 ### Step 4: Configure Environment Variables
 
-Request secrets using the Manus platform:
+Request secrets using the Azlor platform:
 
 ```bash
 # The system will prompt you for:
 # - JWT_SECRET (auto-generated)
-# - VITE_APP_ID (from Manus OAuth)
+# - VITE_APP_ID (from OAuth 2.0)
 # - STRIPE_SECRET_KEY (from Stripe)
 # - STRIPE_PUBLISHABLE_KEY (from Stripe)
 # - Database connection string
@@ -193,16 +193,16 @@ git push -u origin main
 NODE_ENV=production
 DATABASE_URL=<paste from database step>
 JWT_SECRET=<generate random 32-char string>
-VITE_APP_ID=<from Manus>
+VITE_APP_ID=<>
 OAUTH_SERVER_URL=https://api.manus.im
 VITE_OAUTH_PORTAL_URL=https://auth.manus.im
-OWNER_OPEN_ID=<your Manus OpenID>
+OWNER_OPEN_ID=<your OpenID>
 OWNER_NAME=Your Name
 OWNER_EMAIL=niroulaaalok54@gmail.com
 BUILT_IN_FORGE_API_URL=https://api.manus.im
-BUILT_IN_FORGE_API_KEY=<from Manus>
+BUILT_IN_FORGE_API_KEY=<>
 VITE_FRONTEND_FORGE_API_URL=https://api.manus.im
-VITE_FRONTEND_FORGE_API_KEY=<from Manus>
+VITE_FRONTEND_FORGE_API_KEY=<>
 STRIPE_SECRET_KEY=<from Stripe>
 STRIPE_PUBLISHABLE_KEY=<from Stripe>
 ```
@@ -222,7 +222,7 @@ STRIPE_PUBLISHABLE_KEY=<from Stripe>
 ### Step 5: Verify Deployment
 
 - Visit your Render URL
-- Test login with Manus OAuth
+- Test login with OAuth 2.0
 - Verify email sync works
 - Check analytics dashboard
 

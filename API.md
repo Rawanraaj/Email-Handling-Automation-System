@@ -6,7 +6,7 @@ Azlor uses tRPC for type-safe API communication. All endpoints are accessed thro
 
 ## Authentication
 
-All API calls require a valid session cookie obtained through Manus OAuth. The session is automatically managed by the client.
+All API calls require a valid session cookie obtained through OAuth 2.0. The session is automatically managed by the client.
 
 ```typescript
 // Example: Authenticated request

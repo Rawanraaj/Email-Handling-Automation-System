@@ -1,15 +1,30 @@
-import { eq, and, desc, gte, lte, like, inArray } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, emails, emailSummaries, emailReplies, automationRules, analyticsSnapshots, Email, EmailSummary, EmailReply, AutomationRule, AnalyticsSnapshot } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import { eq, and, desc, gte, lte, or, like } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import {
+  InsertUser,
+  users,
+  emails,
+  emailSummaries,
+  emailReplies,
+  automationRules,
+  analyticsSnapshots,
+  subscriptions,
+  auditLogs,
+  gmailTokens,
+} from "../drizzle/schema";
+import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
+/**
+ * Get or create database connection
+ */
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      const client = postgres(process.env.DATABASE_URL);
+      _db = drizzle(client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -17,6 +32,10 @@ export async function getDb() {
   }
   return _db;
 }
+
+// ============================================================================
+// USER OPERATIONS
+// ============================================================================
 
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
@@ -33,44 +52,42 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     const values: InsertUser = {
       openId: user.openId,
     };
-    const updateSet: Record<string, unknown> = {};
 
     const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
+    textFields.forEach((field) => {
+      if (user[field] !== undefined) {
+        values[field] = user[field];
+      }
+    });
 
     if (user.lastSignedIn !== undefined) {
       values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
     }
+
     if (user.role !== undefined) {
       values.role = user.role;
-      updateSet.role = user.role;
     } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
+      values.role = "admin";
     }
 
     if (!values.lastSignedIn) {
       values.lastSignedIn = new Date();
     }
 
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
+    await db
+      .insert(users)
+      .values(values)
+      .onConflictDoUpdate({
+        target: users.openId,
+        set: {
+          name: values.name,
+          email: values.email,
+          loginMethod: values.loginMethod,
+          role: values.role,
+          lastSignedIn: values.lastSignedIn,
+          updatedAt: new Date(),
+        },
+      });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -84,249 +101,345 @@ export async function getUserByOpenId(openId: string) {
     return undefined;
   }
 
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.openId, openId))
+    .limit(1);
 
   return result.length > 0 ? result[0] : undefined;
 }
 
-// Email management queries
-export async function upsertEmail(email: typeof emails.$inferInsert) {
+export async function getUserById(id: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) return undefined;
 
-  await db.insert(emails).values(email).onDuplicateKeyUpdate({
-    set: {
-      subject: email.subject,
-      snippet: email.snippet,
-      body: email.body,
-      isRead: email.isRead,
-      isStarred: email.isStarred,
-      category: email.category,
-      aiScore: email.aiScore,
-      updatedAt: new Date(),
-    },
-  });
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
 }
 
-export async function getEmailsByUserId(userId: number, limit = 50, offset = 0) {
+// ============================================================================
+// EMAIL OPERATIONS
+// ============================================================================
+
+export async function createEmail(email: typeof emails.$inferInsert) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return db
+  const result = await db.insert(emails).values(email).returning();
+  return result[0];
+}
+
+export async function getEmailsByUserId(userId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
     .select()
     .from(emails)
     .where(eq(emails.userId, userId))
     .orderBy(desc(emails.receivedAt))
-    .limit(limit)
-    .offset(offset);
+    .limit(limit);
 }
 
-export async function getEmailById(emailId: number, userId: number) {
+export async function getEmailById(id: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) return null;
 
   const result = await db
     .select()
     .from(emails)
-    .where(and(eq(emails.id, emailId), eq(emails.userId, userId)))
+    .where(eq(emails.id, id))
     .limit(1);
-
-  return result.length > 0 ? result[0] : null;
+  return result[0] || null;
 }
 
-export async function updateEmailCategory(emailId: number, category: string) {
+export async function updateEmail(
+  id: number,
+  updates: Partial<typeof emails.$inferInsert>
+) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  await db.update(emails).set({ category: category as any }).where(eq(emails.id, emailId));
+  return await db
+    .update(emails)
+    .set({ ...updates, updatedAt: new Date() })
+    .where(eq(emails.id, id));
 }
 
-export async function updateEmailReadStatus(emailId: number, isRead: boolean) {
+export async function getEmailsByCategory(userId: number, category: string) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) return [];
 
-  await db.update(emails).set({ isRead: isRead ? 1 : 0 }).where(eq(emails.id, emailId));
-}
-
-export async function updateEmailStarred(emailId: number, isStarred: boolean) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.update(emails).set({ isStarred: isStarred ? 1 : 0 }).where(eq(emails.id, emailId));
-}
-
-export async function getEmailsByCategory(userId: number, category: string, limit = 50) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db
+  return await db
     .select()
     .from(emails)
     .where(and(eq(emails.userId, userId), eq(emails.category, category as any)))
-    .orderBy(desc(emails.receivedAt))
-    .limit(limit);
+    .orderBy(desc(emails.receivedAt));
 }
 
-export async function getPriorityEmails(userId: number, limit = 50) {
+export async function searchEmails(userId: number, query: string) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) return [];
 
-  return db
-    .select()
-    .from(emails)
-    .where(eq(emails.userId, userId))
-    .orderBy(desc(emails.aiScore), desc(emails.receivedAt))
-    .limit(limit);
-}
-
-export async function searchEmails(userId: number, query: string, limit = 50) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db
+  return await db
     .select()
     .from(emails)
     .where(
       and(
         eq(emails.userId, userId),
-        like(emails.subject, `%${query}%`)
+        or(
+          query ? like(emails.subject, `%${query}%`) : undefined,
+          query ? like(emails.body, `%${query}%`) : undefined,
+          query ? like(emails.from, `%${query}%`) : undefined
+        )
       )
     )
-    .orderBy(desc(emails.receivedAt))
-    .limit(limit);
+    .orderBy(desc(emails.receivedAt));
 }
 
-// Email summary queries
-export async function saveSummary(emailId: number, summary: string) {
+// ============================================================================
+// EMAIL SUMMARY OPERATIONS
+// ============================================================================
+
+export async function createEmailSummary(
+  emailId: number,
+  summary: string
+) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  await db.insert(emailSummaries).values({ emailId, summary });
-  await db.update(emails).set({ hasSummary: 1 }).where(eq(emails.id, emailId));
+  const result = await db
+    .insert(emailSummaries)
+    .values({ emailId, summary })
+    .returning();
+  return result[0];
 }
 
-export async function getSummary(emailId: number) {
+export async function getEmailSummary(emailId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) return null;
 
   const result = await db
     .select()
     .from(emailSummaries)
     .where(eq(emailSummaries.emailId, emailId))
     .limit(1);
-
-  return result.length > 0 ? result[0] : null;
+  return result[0] || null;
 }
 
-// Email reply suggestions queries
-export async function saveReplySuggestions(emailId: number, replies: string[]) {
+// ============================================================================
+// EMAIL REPLY OPERATIONS
+// ============================================================================
+
+export async function createEmailReply(
+  emailId: number,
+  replyText: string,
+  replyIndex: number
+) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  for (let i = 0; i < replies.length; i++) {
-    await db.insert(emailReplies).values({
-      emailId,
-      replyText: replies[i],
-      replyIndex: i,
-    });
-  }
-  await db.update(emails).set({ hasReplySuggestions: 1 }).where(eq(emails.id, emailId));
+  const result = await db
+    .insert(emailReplies)
+    .values({ emailId, replyText, replyIndex })
+    .returning();
+  return result[0];
 }
 
-export async function getReplySuggestions(emailId: number) {
+export async function getEmailReplies(emailId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) return [];
 
-  return db
+  return await db
     .select()
     .from(emailReplies)
     .where(eq(emailReplies.emailId, emailId))
     .orderBy(emailReplies.replyIndex);
 }
 
-// Automation rules queries
-export async function createRule(userId: number, name: string, condition: any, action: any) {
+// ============================================================================
+// AUTOMATION RULES OPERATIONS
+// ============================================================================
+
+export async function createRule(
+  userId: number,
+  name: string,
+  description: string | undefined,
+  conditions: any,
+  actions: any
+) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  await db.insert(automationRules).values({
-    userId,
-    name,
-    condition: JSON.stringify(condition),
-    action: JSON.stringify(action),
-  });
+  const result = await db
+    .insert(automationRules)
+    .values({
+      userId,
+      name,
+      description,
+      conditions,
+      actions,
+      isActive: true,
+    })
+    .returning();
+  return result[0];
 }
 
 export async function getRulesByUserId(userId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) return [];
 
-  return db
+  return await db
     .select()
     .from(automationRules)
-    .where(and(eq(automationRules.userId, userId), eq(automationRules.isActive, 1)));
+    .where(eq(automationRules.userId, userId));
 }
 
-export async function updateRule(ruleId: number, updates: any) {
+export async function updateRule(
+  id: number,
+  updates: Partial<typeof automationRules.$inferInsert>
+) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  await db.update(automationRules).set(updates).where(eq(automationRules.id, ruleId));
+  return await db
+    .update(automationRules)
+    .set({ ...updates, updatedAt: new Date() })
+    .where(eq(automationRules.id, id));
 }
 
-export async function deleteRule(ruleId: number) {
+export async function deleteRule(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  await db.update(automationRules).set({ isActive: 0 }).where(eq(automationRules.id, ruleId));
+  return await db.delete(automationRules).where(eq(automationRules.id, id));
 }
 
-// Analytics queries
-export async function saveAnalyticsSnapshot(userId: number, date: string, data: any) {
+// ============================================================================
+// ANALYTICS OPERATIONS
+// ============================================================================
+
+export async function createAnalyticsSnapshot(
+  snapshot: typeof analyticsSnapshots.$inferInsert
+) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  await db.insert(analyticsSnapshots).values({
-    userId,
-    date,
-    ...data,
-  });
+  const result = await db
+    .insert(analyticsSnapshots)
+    .values(snapshot)
+    .returning();
+  return result[0];
 }
 
-export async function getAnalyticsForDateRange(userId: number, startDate: string, endDate: string) {
+export async function getAnalyticsForUser(userId: number, daysBack: number = 30) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) return [];
 
-  return db
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - daysBack);
+
+  return await db
     .select()
     .from(analyticsSnapshots)
     .where(
       and(
         eq(analyticsSnapshots.userId, userId),
-        gte(analyticsSnapshots.date, startDate),
-        lte(analyticsSnapshots.date, endDate)
+        gte(analyticsSnapshots.date, startDate)
       )
     )
-    .orderBy(analyticsSnapshots.date);
+    .orderBy(desc(analyticsSnapshots.date));
 }
 
-export async function getTopSenders(userId: number, limit = 10) {
+// ============================================================================
+// SUBSCRIPTION OPERATIONS
+// ============================================================================
+
+export async function createSubscription(
+  subscription: typeof subscriptions.$inferInsert
+) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // This is a simplified version - in production you'd use raw SQL for aggregation
-  const allEmails = await db
+  const result = await db
+    .insert(subscriptions)
+    .values(subscription)
+    .returning();
+  return result[0];
+}
+
+export async function getSubscriptionByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
     .select()
-    .from(emails)
-    .where(eq(emails.userId, userId));
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, userId))
+    .limit(1);
+  return result[0] || null;
+}
 
-  const senderMap = new Map<string, { name: string; count: number }>();
-  allEmails.forEach((email) => {
-    const current = senderMap.get(email.from) || { name: email.senderName || email.from, count: 0 };
-    senderMap.set(email.from, { ...current, count: current.count + 1 });
-  });
+export async function updateSubscription(
+  userId: number,
+  updates: Partial<typeof subscriptions.$inferInsert>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
 
-  return Array.from(senderMap.values())
-    .sort((a, b) => b.count - a.count)
-    .slice(0, limit);
+  return await db
+    .update(subscriptions)
+    .set({ ...updates, updatedAt: new Date() })
+    .where(eq(subscriptions.userId, userId));
+}
+
+// ============================================================================
+// AUDIT LOG OPERATIONS
+// ============================================================================
+
+export async function createAuditLog(log: typeof auditLogs.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(auditLogs).values(log).returning();
+  return result[0];
+}
+
+export async function getAuditLogsForUser(userId: number, limit: number = 100) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(auditLogs)
+    .where(eq(auditLogs.userId, userId))
+    .orderBy(desc(auditLogs.createdAt))
+    .limit(limit);
+}
+
+// ============================================================================
+// GMAIL TOKEN OPERATIONS
+// ============================================================================
+
+export async function getGmailTokenByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(gmailTokens)
+    .where(eq(gmailTokens.userId, userId))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function createGmailToken(
+  token: typeof gmailTokens.$inferInsert
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(gmailTokens).values(token).returning();
+  return result[0];
 }

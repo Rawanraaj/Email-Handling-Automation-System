@@ -13,8 +13,11 @@ const CATEGORY_COLORS = {
 };
 
 export default function Analytics() {
-  const { data: topSenders, isLoading: topSendersLoading } = trpc.analytics.getTopSenders.useQuery({ limit: 10 });
-  const { data: categoryDist, isLoading: categoryLoading } = trpc.analytics.getCategoryDistribution.useQuery();
+  const { data: stats, isLoading: statsLoading } = trpc.analytics.getStats.useQuery();
+  const topSenders = stats?.topSenders || [];
+  const categoryDist = stats?.categoryCounts || {};
+  const topSendersLoading = statsLoading;
+  const categoryLoading = statsLoading;
 
   const categoryData = categoryDist
     ? Object.entries(categoryDist).map(([name, value]) => ({
@@ -39,7 +42,7 @@ export default function Analytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Emails</p>
-                <p className="text-3xl font-bold mt-2">{categoryDist ? Object.values(categoryDist).reduce((a, b) => a + b, 0) : 0}</p>
+                <p className="text-3xl font-bold mt-2">{categoryDist ? Object.values(categoryDist).reduce((a: number, b: any) => a + b, 0) : 0}</p>
               </div>
               <BarChart3 className="w-8 h-8 text-muted-foreground opacity-50" />
             </div>

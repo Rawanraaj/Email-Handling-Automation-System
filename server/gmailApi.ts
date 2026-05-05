@@ -1,4 +1,5 @@
 import { gmail_v1, google } from "googleapis";
+import { encrypt, decrypt } from "./encryption";
 import { OAuth2Client } from "google-auth-library";
 import { getDb } from "./db";
 import { gmailTokens, emails, emailSummaries, emailReplies } from "../drizzle/schema";
@@ -54,12 +55,10 @@ export class GmailApiService {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
 
-    // Encrypt tokens before storing (in production, use proper encryption)
-    const encryptedAccessToken = Buffer.from(tokens.access_token).toString(
-      "base64"
-    );
+    // Encrypt tokens using AES-256-GCM before storing
+    const encryptedAccessToken = encrypt(tokens.access_token);
     const encryptedRefreshToken = tokens.refresh_token
-      ? Buffer.from(tokens.refresh_token).toString("base64")
+      ? encrypt(tokens.refresh_token)
       : null;
 
     await db
@@ -103,9 +102,9 @@ export class GmailApiService {
 
     const token = result[0];
     // Decrypt tokens
-    const accessToken = Buffer.from(token.accessToken, "base64").toString();
+    const accessToken = decrypt(token.accessToken);
     const refreshToken = token.refreshToken
-      ? Buffer.from(token.refreshToken, "base64").toString()
+      ? decrypt(token.refreshToken)
       : null;
 
     return {

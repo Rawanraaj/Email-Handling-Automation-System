@@ -328,3 +328,120 @@ export const auditLogs = pgTable(
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+// ============================================================================
+// CUSTOMER SERVICE TABLES (new)
+// ============================================================================
+
+export const workspaceRoleEnum = pgEnum("workspace_role", ["owner", "admin", "agent", "viewer"]);
+export const ticketStatusEnum = pgEnum("ticket_status", ["open", "in_progress", "waiting", "resolved", "closed"]);
+export const ticketPriorityEnum = pgEnum("ticket_priority", ["low", "medium", "high", "urgent"]);
+export const sentimentEnum = pgEnum("sentiment", ["positive", "neutral", "frustrated", "angry"]);
+
+export const workspaces = pgTable(
+  "workspaces",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    ownerId: integer("ownerId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    plan: subscriptionTierEnum("plan").default("free").notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({ ownerIdx: index("workspaces_ownerId_idx").on(table.ownerId) })
+);
+export type Workspace = typeof workspaces.$inferSelect;
+export type InsertWorkspace = typeof workspaces.$inferInsert;
+
+export const teamMembers = pgTable(
+  "team_members",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspaceId").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    role: workspaceRoleEnum("role").default("agent").notNull(),
+    isActive: boolean("isActive").default(true).notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    workspaceIdx: index("team_members_workspaceId_idx").on(table.workspaceId),
+    userIdx: index("team_members_userId_idx").on(table.userId),
+  })
+);
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type InsertTeamMember = typeof teamMembers.$inferInsert;
+
+export const customerProfiles = pgTable(
+  "customer_profiles",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspaceId").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    email: varchar("email", { length: 320 }).notNull(),
+    name: varchar("name", { length: 255 }),
+    totalTickets: integer("totalTickets").default(0).notNull(),
+    resolvedTickets: integer("resolvedTickets").default(0).notNull(),
+    sentimentHistory: jsonb("sentimentHistory"), // Array of recent sentiments
+    lastContactedAt: timestamp("lastContactedAt", { withTimezone: true }),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    workspaceIdx: index("customer_profiles_workspaceId_idx").on(table.workspaceId),
+    emailIdx: index("customer_profiles_email_idx").on(table.email),
+  })
+);
+export type CustomerProfile = typeof customerProfiles.$inferSelect;
+export type InsertCustomerProfile = typeof customerProfiles.$inferInsert;
+
+export const tickets = pgTable(
+  "tickets",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspaceId").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    emailId: integer("emailId").references(() => emails.id, { onDelete: "set null" }),
+    customerId: integer("customerId").references(() => customerProfiles.id, { onDelete: "set null" }),
+    assignedTo: integer("assignedTo").references(() => users.id, { onDelete: "set null" }),
+    subject: text("subject"),
+    status: ticketStatusEnum("status").default("open").notNull(),
+    priority: ticketPriorityEnum("priority").default("medium").notNull(),
+    sentiment: sentimentEnum("sentiment").default("neutral"),
+    slaDeadline: timestamp("slaDeadline", { withTimezone: true }),
+    firstResponseAt: timestamp("firstResponseAt", { withTimezone: true }),
+    resolvedAt: timestamp("resolvedAt", { withTimezone: true }),
+    closedAt: timestamp("closedAt", { withTimezone: true }),
+    tags: jsonb("tags"), // string[]
+    notes: text("notes"), // internal agent notes
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    workspaceIdx: index("tickets_workspaceId_idx").on(table.workspaceId),
+    statusIdx: index("tickets_status_idx").on(table.status),
+    assignedToIdx: index("tickets_assignedTo_idx").on(table.assignedTo),
+    slaIdx: index("tickets_slaDeadline_idx").on(table.slaDeadline),
+  })
+);
+export type Ticket = typeof tickets.$inferSelect;
+export type InsertTicket = typeof tickets.$inferInsert;
+
+export const knowledgeBase = pgTable(
+  "knowledge_base",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspaceId").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 500 }).notNull(),
+    content: text("content").notNull(),
+    category: varchar("category", { length: 100 }),
+    usageCount: integer("usageCount").default(0).notNull(),
+    isActive: boolean("isActive").default(true).notNull(),
+    createdBy: integer("createdBy").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    workspaceIdx: index("knowledge_base_workspaceId_idx").on(table.workspaceId),
+    categoryIdx: index("knowledge_base_category_idx").on(table.category),
+  })
+);
+export type KnowledgeBaseArticle = typeof knowledgeBase.$inferSelect;
+export type InsertKnowledgeBaseArticle = typeof knowledgeBase.$inferInsert;
